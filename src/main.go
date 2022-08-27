@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -23,7 +25,7 @@ func main() {
 
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"GOOS":         runtime.GOOS,
 			"GOARCH":       runtime.GOARCH,
 			"Version":      runtime.Version(),
@@ -32,6 +34,28 @@ func main() {
 			"NumCgoCall":   runtime.NumCgoCall(),
 			"Time":         time.Now().Format(time.RFC1123),
 		})
+	})
+	r.GET("/cpuInfo", func(c *gin.Context) {
+		// Read /proc/cpuinfo
+		f, err := os.Open("/proc/cpuinfo")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		defer f.Close()
+
+		// Copy to in-memory buffer
+		b, err := io.ReadAll(f)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		c.String(http.StatusOK, string(b))
 	})
 	r.Run(":8080") // listen and serve on :8080
 }
