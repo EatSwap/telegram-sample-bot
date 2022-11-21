@@ -24,6 +24,9 @@ func main() {
 	}()
 
 	r := gin.Default()
+	r.GET("/time", func(c *gin.Context) {
+		c.String(http.StatusOK, time.Now().Format(time.RFC3339))
+	})
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"GOOS":         runtime.GOOS,
